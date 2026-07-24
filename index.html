@@ -725,13 +725,27 @@
         window.lecturersList = [];
         window.currentUser = null; // { role: 'admin' | 'lecturer', package: string, name: string }
 
+        // Set default date for attendance
+        document.getElementById('att-date').valueAsDate = new Date();
+
         // Switch Tabs Functionality
         window.switchTab = function(tabId, element) {
             document.querySelectorAll('.section-panel').forEach(panel => panel.classList.remove('active'));
             document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
             
-            document.getElementById(tabId).classList.add('active');
+            const panel = document.getElementById(tabId);
+            if (panel) panel.classList.add('active');
             if (element) element.classList.add('active');
+
+            const titles = {
+                'overview-tab': 'Dashboard Overview',
+                'lecturers-tab': 'Lecturer Directory',
+                'students-tab': 'Student Roster',
+                'attendance-tab': 'Class Attendance Register',
+                'fees-tab': 'Fee Collection Tracking',
+                'email-form-tab': 'Send Registration Link'
+            };
+            document.getElementById('page-title').innerText = titles[tabId] || 'Dashboard';
         };
 
         // Send Form Mailto trigger
@@ -741,374 +755,343 @@
                 alert("Please enter the student's email address first.");
                 return;
             }
-            const formUrl = window.location.href.split('#')[0];
-            const subject = encodeURIComponent("DevNet Solutions - Course Registration Form");
-            const body = encodeURIComponent(`Hello,\n\nPlease complete your course registration using the link below:\n\n${formUrl}\n\nUpon submission, you will automatically receive your Student ID.\n\nBest regards,\nDevNet Solutions Team`);
-            
+            const subject = encodeURIComponent("DevNet Solutions Student Registration");
+            const body = encodeURIComponent(`Hello,\n\nPlease click the link below to complete your registration for DevNet Solutions:\n\n${window.location.href}\n\nBest regards,\nDevNet Solutions Team`);
             window.location.href = `mailto:${studentEmail}?subject=${subject}&body=${body}`;
         };
 
-        // Login Handler (Supports Admin + Lecturers)
-        document.getElementById('login-form').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const email = document.getElementById('login-email').value.trim().toLowerCase();
-            const password = document.getElementById('login-password').value.trim();
+        // Modal Handlers
+        window.closeModal = function() {
+            document.getElementById('welcome-modal').style.display = 'none';
+        };
 
-            if (email === "abdulaisesay167@gmail.com" && password === "Mexcess25132513") {
-                // Admin Login
-                window.currentUser = { role: 'admin', name: 'System Admin', package: 'All' };
-                setupRoleUI();
-                document.getElementById('login-screen').style.display = 'none';
-                document.getElementById('dashboard').style.display = 'flex';
-                initRealtimeListeners();
+        // Authentication Handler
+        document.getElementById('login-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value.trim();
+            const password = document.getElementById('login-password').value.trim();
+            const errDiv = document.getElementById('login-error');
+
+            if (email === 'admin@devnet.com' && password === 'admin123') {
+                window.currentUser = { role: 'admin', name: 'Administrator' };
+                setupDashboardView();
             } else {
-                // Check if email belongs to a Lecturer
-                const lecturerMatch = window.lecturersList.find(l => l.email.toLowerCase() === email);
-                if (lecturerMatch) {
-                    window.currentUser = { role: 'lecturer', name: lecturerMatch.name, package: lecturerMatch.package };
-                    setupRoleUI();
-                    document.getElementById('login-screen').style.display = 'none';
-                    document.getElementById('dashboard').style.display = 'flex';
-                    initRealtimeListeners();
+                const lec = window.lecturersList.find(l => l.email === email);
+                if (lec && password === 'lecturer123') {
+                    window.currentUser = { role: 'lecturer', name: lec.name, package: lec.assignedPackage };
+                    setupDashboardView();
                 } else {
-                    document.getElementById('login-error').style.display = 'block';
+                    errDiv.style.display = 'block';
                 }
             }
         });
-
-        function setupRoleUI() {
-            const isAdmin = window.currentUser.role === 'admin';
-            
-            // Toggle sidebar elements
-            document.querySelectorAll('.admin-only').forEach(el => {
-                el.style.display = isAdmin ? '' : 'none';
-            });
-
-            if (isAdmin) {
-                document.getElementById('user-display-role').innerText = 'Welcome back, System Admin';
-                document.getElementById('user-role-badge').innerText = 'Admin Active';
-                document.getElementById('filter-container').style.display = 'block';
-            } else {
-                document.getElementById('user-display-role').innerText = `Welcome Lecturer: ${window.currentUser.name} (${window.currentUser.package})`;
-                document.getElementById('user-role-badge').innerText = 'Lecturer Access';
-                // Lock course filter to lecturer package
-                document.getElementById('filter-course').value = window.currentUser.package;
-                document.getElementById('filter-container').style.display = 'none';
-                document.getElementById('att-package').value = window.currentUser.package;
-                document.getElementById('att-package').disabled = true;
-            }
-        }
 
         window.logout = function() {
             window.currentUser = null;
             document.getElementById('dashboard').style.display = 'none';
             document.getElementById('login-screen').style.display = 'flex';
-            document.getElementById('login-error').style.display = 'none';
             document.getElementById('login-form').reset();
+            document.getElementById('login-error').style.display = 'none';
         };
 
-        function initRealtimeListeners() {
-            document.getElementById('att-date').valueAsDate = new Date();
+        function setupDashboardView() {
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('dashboard').style.display = 'flex';
 
-            // Fetch Real-time Students
-            onSnapshot(collection(db, "students"), (snapshot) => {
-                window.studentsList = [];
-                snapshot.forEach(docSnap => {
-                    window.studentsList.push({ firestoreId: docSnap.id, ...docSnap.data() });
-                });
-                window.studentsList.sort((a,b) => (a.studentId || "").localeCompare(b.studentId || ""));
+            const adminElements = document.querySelectorAll('.admin-only');
+            const roleBadge = document.getElementById('user-role-badge');
+            const displayRole = document.getElementById('user-display-role');
+
+            if (window.currentUser.role === 'admin') {
+                adminElements.forEach(el => el.style.display = '');
+                roleBadge.innerText = 'Admin Active';
+                roleBadge.className = 'tag';
+                displayRole.innerText = `Logged in as ${window.currentUser.name}`;
+                document.getElementById('filter-course').disabled = false;
+                document.getElementById('att-package').disabled = false;
+            } else {
+                adminElements.forEach(el => el.style.display = 'none');
+                roleBadge.innerText = 'Lecturer Active';
+                roleBadge.className = 'tag';
+                roleBadge.style.background = 'rgba(212, 175, 55, 0.2)';
+                roleBadge.style.color = 'var(--gold-primary)';
+                displayRole.innerText = `Logged in as ${window.currentUser.name} (${window.currentUser.package})`;
                 
-                renderOverview();
-                renderStudents();
-                loadAttendanceList();
-                renderFees();
-            });
+                // Restrict filters for lecturer
+                const filterSelect = document.getElementById('filter-course');
+                const attSelect = document.getElementById('att-package');
+                filterSelect.value = window.currentUser.package;
+                filterSelect.disabled = true;
+                attSelect.value = window.currentUser.package;
+                attSelect.disabled = true;
+            }
 
-            // Fetch Real-time Lecturers
-            onSnapshot(collection(db, "lecturers"), (snapshot) => {
-                window.lecturersList = [];
-                snapshot.forEach(docSnap => {
-                    window.lecturersList.push({ firestoreId: docSnap.id, ...docSnap.data() });
-                });
-                renderLecturers();
-            });
+            renderStudents();
+            renderOverview();
+            renderFees();
+            loadAttendanceList();
+            switchTab('overview-tab', document.querySelector('.nav-item'));
         }
 
+        // Firebase Firestore Realtime Listeners
+        onSnapshot(collection(db, "students"), (snapshot) => {
+            window.studentsList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            renderOverview();
+            renderStudents();
+            renderFees();
+            loadAttendanceList();
+        });
+
+        onSnapshot(collection(db, "lecturers"), (snapshot) => {
+            window.lecturersList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            renderLecturers();
+        });
+
         // Add Lecturer Handler
-        document.getElementById('add-lecturer-form').addEventListener('submit', async function(e) {
+        document.getElementById('add-lecturer-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const name = document.getElementById('lec-name').value.trim();
             const email = document.getElementById('lec-email').value.trim();
-            const pkg = document.getElementById('lec-package').value;
+            const assignedPackage = document.getElementById('lec-package').value;
 
             try {
-                await addDoc(collection(db, "lecturers"), {
-                    name: name,
-                    email: email,
-                    package: pkg,
-                    createdAt: new Date().toISOString()
-                });
-                alert(`Lecturer ${name} added successfully! They can log in using their email.`);
-                this.reset();
+                await addDoc(collection(db, "lecturers"), { name, email, assignedPackage });
+                document.getElementById('add-lecturer-form').reset();
             } catch (err) {
-                alert("Failed to add lecturer: " + err.message);
+                alert("Error adding lecturer: " + err.message);
             }
         });
 
-        window.removeLecturer = async function(docId) {
-            if(confirm("Are you sure you want to remove this lecturer?")) {
-                await deleteDoc(doc(db, "lecturers", docId));
+        window.deleteLecturer = async function(id) {
+            if (confirm("Are you sure you want to remove this lecturer?")) {
+                await deleteDoc(doc(db, "lecturers", id));
             }
         };
 
         function renderLecturers() {
-            const tbody = document.getElementById('lecturer-list');
-            if(!tbody) return;
-            tbody.innerHTML = '';
-
-            window.lecturersList.forEach(lec => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td><strong>${lec.name}</strong></td>
-                    <td>${lec.email}</td>
-                    <td><span class="tag">${lec.package}</span></td>
+            const list = document.getElementById('lecturer-list');
+            list.innerHTML = window.lecturersList.map(l => `
+                <tr>
+                    <td><strong>${l.name}</strong></td>
+                    <td>${l.email}</td>
+                    <td><span class="tag">${l.assignedPackage}</span></td>
                     <td>
-                        <button class="btn-action btn-danger" onclick="removeLecturer('${lec.firestoreId}')">Remove</button>
+                        <button class="btn-action btn-danger" onclick="deleteLecturer('${l.id}')">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
                     </td>
-                `;
-                tbody.appendChild(tr);
-            });
+                </tr>
+            `).join('');
         }
 
-        function filterStudentsForCurrentUser() {
-            if (!window.currentUser) return [];
-            if (window.currentUser.role === 'admin') {
-                return window.studentsList;
-            } else {
-                // Lecturer can ONLY see students in their class
-                return window.studentsList.filter(s => s.package === window.currentUser.package);
+        // Student Registration Handler
+        document.getElementById('public-reg-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('pub-name').value.trim();
+            const email = document.getElementById('pub-email').value.trim();
+            const phone = document.getElementById('pub-phone').value.trim();
+            const gender = document.getElementById('pub-gender').value;
+            const address = document.getElementById('pub-address').value.trim();
+            const selectedPackage = document.getElementById('pub-package').value;
+
+            const studentId = 'Dev' + new Date().getFullYear() + Math.floor(100 + Math.random() * 900);
+
+            try {
+                await addDoc(collection(db, "students"), {
+                    studentId,
+                    name,
+                    email,
+                    phone,
+                    gender,
+                    address,
+                    package: selectedPackage,
+                    paidAmount: 0,
+                    createdAt: new Date().toISOString()
+                });
+
+                document.getElementById('modal-student-id').innerText = studentId;
+                document.getElementById('modal-student-name').innerText = name;
+                document.getElementById('modal-student-pkg').innerText = selectedPackage;
+                document.getElementById('welcome-modal').style.display = 'flex';
+                document.getElementById('public-reg-form').reset();
+            } catch (err) {
+                alert("Error registering student: " + err.message);
             }
-        }
+        });
 
-        window.renderStudents = function() {
-            const tbody = document.getElementById('student-list');
-            if(!tbody) return;
-            tbody.innerHTML = '';
-
-            let relevantStudents = filterStudentsForCurrentUser();
-            const filterPkg = document.getElementById('filter-course').value;
-
-            if (window.currentUser.role === 'admin' && filterPkg !== "All") {
-                relevantStudents = relevantStudents.filter(s => s.package === filterPkg);
+        window.deleteStudent = async function(id) {
+            if (confirm("Are you sure you want to remove this student?")) {
+                await deleteDoc(doc(db, "students", id));
             }
+        };
 
-            relevantStudents.forEach(s => {
-                const tr = document.createElement('tr');
-                const actionBtn = window.currentUser.role === 'admin' 
-                    ? `<button class="btn-action btn-danger" onclick="removeStudent('${s.firestoreId}')">Delete</button>` 
-                    : `-`;
-
-                tr.innerHTML = `
-                    <td><span class="id-badge">${s.studentId || 'N/A'}</span></td>
-                    <td><strong>${s.name}</strong></td>
-                    <td>${s.gender || 'N/A'}</td>
-                    <td>${s.phone || 'N/A'}</td>
-                    <td>${s.address || 'N/A'}</td>
-                    <td><span class="tag">${s.package}</span></td>
-                    ${window.currentUser.role === 'admin' ? `<td>${actionBtn}</td>` : ''}
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-
+        // Render Functions
         function renderOverview() {
-            const relevantStudents = filterStudentsForCurrentUser();
-            
-            const aplusCount = relevantStudents.filter(s => s.package === "A+ Certification & Networking").length;
-            const webCount = relevantStudents.filter(s => s.package === "Web Design").length;
-            const msCount = relevantStudents.filter(s => s.package === "Microsoft Packages").length;
+            const aplus = window.studentsList.filter(s => s.package === 'A+ Certification & Networking').length;
+            const web = window.studentsList.filter(s => s.package === 'Web Design').length;
+            const ms = window.studentsList.filter(s => s.package === 'Microsoft Packages').length;
 
-            document.getElementById('cnt-aplus').innerText = `${aplusCount} Students`;
-            document.getElementById('cnt-web').innerText = `${webCount} Students`;
-            document.getElementById('cnt-ms').innerText = `${msCount} Students`;
+            document.getElementById('cnt-aplus').innerText = `${aplus} Students`;
+            document.getElementById('cnt-web').innerText = `${web} Students`;
+            document.getElementById('cnt-ms').innerText = `${ms} Students`;
 
-            const tbody = document.getElementById('overview-table-body');
-            tbody.innerHTML = '';
+            const recent = [...window.studentsList]
+                .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
+                .slice(0, 5);
 
-            relevantStudents.slice(0, 5).forEach(s => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td><span class="id-badge">${s.studentId || 'N/A'}</span></td>
-                    <td>${s.name}</td>
+            document.getElementById('overview-table-body').innerHTML = recent.map(s => `
+                <tr>
+                    <td><span class="id-badge">${s.studentId}</span></td>
+                    <td><strong>${s.name}</strong></td>
                     <td>${s.email}</td>
                     <td>${s.phone}</td>
                     <td><span class="tag">${s.package}</span></td>
-                `;
-                tbody.appendChild(tr);
-            });
+                </tr>
+            `).join('');
         }
 
-        window.loadAttendanceList = function() {
-            const tbody = document.getElementById('attendance-list');
-            if(!tbody) return;
-            tbody.innerHTML = '';
+        window.renderStudents = function() {
+            const filter = document.getElementById('filter-course').value;
+            let list = window.studentsList;
 
-            const selectedPkg = document.getElementById('att-package').value;
-            const classStudents = filterStudentsForCurrentUser().filter(s => s.package === selectedPkg);
+            if (window.currentUser && window.currentUser.role === 'lecturer') {
+                list = list.filter(s => s.package === window.currentUser.package);
+            } else if (filter !== 'All') {
+                list = list.filter(s => s.package === filter);
+            }
 
-            if (classStudents.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color: var(--text-muted);">No students found in this course package.</td></tr>`;
+            const isAdmin = window.currentUser && window.currentUser.role === 'admin';
+
+            document.getElementById('student-list').innerHTML = list.map(s => `
+                <tr>
+                    <td><span class="id-badge">${s.studentId}</span></td>
+                    <td><strong>${s.name}</strong></td>
+                    <td>${s.gender}</td>
+                    <td>${s.phone}</td>
+                    <td>${s.address}</td>
+                    <td><span class="tag">${s.package}</span></td>
+                    ${isAdmin ? `
+                    <td class="admin-only">
+                        <button class="btn-action btn-danger" onclick="deleteStudent('${s.id}')">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </td>` : ''}
+                </tr>
+            `).join('');
+        };
+
+        function renderFees() {
+            const totalExpected = window.studentsList.length * COURSE_FEE;
+            const totalCollected = window.studentsList.reduce((acc, s) => acc + (Number(s.paidAmount) || 0), 0);
+            const totalOutstanding = totalExpected - totalCollected;
+
+            document.getElementById('total-expected-fees').innerText = `${totalExpected.toLocaleString()} LE`;
+            document.getElementById('total-collected-fees').innerText = `${totalCollected.toLocaleString()} LE`;
+            document.getElementById('total-pending-fees').innerText = `${totalOutstanding.toLocaleString()} LE`;
+
+            document.getElementById('fees-table-body').innerHTML = window.studentsList.map(s => {
+                const paid = Number(s.paidAmount) || 0;
+                const outstanding = COURSE_FEE - paid;
+                const percent = Math.min(100, Math.round((paid / COURSE_FEE) * 100));
+
+                return `
+                    <tr>
+                        <td><span class="id-badge">${s.studentId}</span></td>
+                        <td><strong>${s.name}</strong></td>
+                        <td><span class="tag">${s.package}</span></td>
+                        <td>${paid.toLocaleString()} LE</td>
+                        <td style="color: ${outstanding > 0 ? '#ef4444' : '#10b981'}; font-weight: bold;">
+                            ${outstanding.toLocaleString()} LE
+                        </td>
+                        <td style="min-width: 120px;">
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">${percent}% Paid</div>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar-fill" style="width: ${percent}%;"></div>
+                            </div>
+                        </td>
+                        <td>
+                            <div style="display: flex; gap: 5px; align-items: center;">
+                                <input type="number" id="fee-input-${s.id}" placeholder="Amount" style="width: 80px; padding: 5px; background: #080d18; border: 1px solid var(--border-color); color: var(--text-light); border-radius: 4px; font-size: 0.8rem;">
+                                <button class="btn-action btn-success" onclick="updateFee('${s.id}', ${paid})">Add</button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        window.updateFee = async function(id, currentPaid) {
+            const input = document.getElementById(`fee-input-${id}`);
+            const val = Number(input.value);
+            if (isNaN(val) || val <= 0) {
+                alert("Please enter a valid positive payment amount.");
+                return;
+            }
+            const newTotal = currentPaid + val;
+            if (newTotal > COURSE_FEE) {
+                alert(`Payment exceeds total course fee limit of ${COURSE_FEE} LE!`);
                 return;
             }
 
-            classStudents.forEach(s => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
+            try {
+                await updateDoc(doc(db, "students", id), { paidAmount: newTotal });
+            } catch (err) {
+                alert("Error updating payment: " + err.message);
+            }
+        };
+
+        window.loadAttendanceList = function() {
+            const pkg = document.getElementById('att-package').value;
+            const students = window.studentsList.filter(s => s.package === pkg);
+
+            document.getElementById('attendance-list').innerHTML = students.map(s => `
+                <tr>
                     <td><span class="id-badge">${s.studentId}</span></td>
-                    <td>${s.name}</td>
-                    <td>${s.package}</td>
+                    <td><strong>${s.name}</strong></td>
+                    <td><span class="tag">${s.package}</span></td>
                     <td>
-                        <select class="att-status" data-id="${s.studentId}" style="padding: 4px; background: #080d18; color: white; border: 1px solid var(--border-color); border-radius: 4px;">
+                        <select id="att-status-${s.id}" style="padding: 4px 8px; background: #080d18; border: 1px solid var(--border-color); color: var(--text-light); border-radius: 4px;">
                             <option value="Present">Present</option>
                             <option value="Absent">Absent</option>
                             <option value="Late">Late</option>
                         </select>
                     </td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-
-        window.saveAttendance = function() {
-            alert("Attendance Log successfully stored.");
-        }
-
-        // --- FEES MANAGEMENT FUNCTIONALITY (ADMIN) ---
-        function renderFees() {
-            if (window.currentUser?.role !== 'admin') return;
-
-            const tbody = document.getElementById('fees-table-body');
-            if (!tbody) return;
-            tbody.innerHTML = '';
-
-            let totalExpected = window.studentsList.length * COURSE_FEE;
-            let totalCollected = 0;
-
-            window.studentsList.forEach(s => {
-                const paidAmount = Number(s.paidFee || 0);
-                totalCollected += paidAmount;
-                const outstanding = Math.max(0, COURSE_FEE - paidAmount);
-                const percentage = Math.min(100, Math.round((paidAmount / COURSE_FEE) * 100));
-
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td><span class="id-badge">${s.studentId || 'N/A'}</span></td>
-                    <td><strong>${s.name}</strong></td>
-                    <td><span class="tag">${s.package}</span></td>
-                    <td style="color: var(--gold-primary); font-weight: bold;">${paidAmount} LE</td>
-                    <td style="color: ${outstanding > 0 ? '#ef4444' : '#10b981'}; font-weight: bold;">${outstanding} LE</td>
-                    <td>
-                        <div style="font-size: 0.75rem; display: flex; justify-content: space-between; margin-bottom: 2px;">
-                            <span>Progress</span>
-                            <span style="color: var(--cyan-accent); font-weight: bold;">${percentage}%</span>
-                        </div>
-                        <div class="progress-bar-container">
-                            <div class="progress-bar-fill" style="width: ${percentage}%;"></div>
-                        </div>
-                    </td>
-                    <td>
-                        <button class="btn-action btn-success" onclick="updateStudentFee('${s.firestoreId}', ${paidAmount})">Update Payment</button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-
-            document.getElementById('total-expected-fees').innerText = `${totalExpected.toLocaleString()} LE`;
-            document.getElementById('total-collected-fees').innerText = `${totalCollected.toLocaleString()} LE`;
-            document.getElementById('total-pending-fees').innerText = `${(totalExpected - totalCollected).toLocaleString()} LE`;
-        }
-
-        window.updateStudentFee = async function(docId, currentPaid) {
-            const input = prompt(`Enter total amount paid by student so far (Total Fee = ${COURSE_FEE} LE):`, currentPaid);
-            if (input !== null) {
-                const newPaid = parseFloat(input);
-                if (isNaN(newPaid) || newPaid < 0) {
-                    alert("Please enter a valid payment amount.");
-                    return;
-                }
-                try {
-                    await updateDoc(doc(db, "students", docId), {
-                        paidFee: newPaid
-                    });
-                    alert("Payment record updated!");
-                } catch (err) {
-                    alert("Failed to update payment: " + err.message);
-                }
-            }
+                </tr>
+            `).join('');
         };
 
-        window.removeStudent = async function(docId) {
-            if(confirm("Permanently delete student record?")) {
-                await deleteDoc(doc(db, "students", docId));
+        window.saveAttendance = async function() {
+            const pkg = document.getElementById('att-package').value;
+            const date = document.getElementById('att-date').value;
+            const students = window.studentsList.filter(s => s.package === pkg);
+
+            if (!date) {
+                alert("Please select a valid date for attendance.");
+                return;
             }
-        };
 
-        function generateNextStudentId() {
-            let maxNum = 0;
-            window.studentsList.forEach(s => {
-                if (s.studentId && s.studentId.startsWith("Dev2026")) {
-                    const numStr = s.studentId.replace("Dev2026", "");
-                    const num = parseInt(numStr, 10);
-                    if (!isNaN(num) && num > maxNum) maxNum = num;
-                }
+            const records = students.map(s => {
+                const statusSelect = document.getElementById(`att-status-${s.id}`);
+                return {
+                    studentId: s.studentId,
+                    studentName: s.name,
+                    status: statusSelect ? statusSelect.value : 'Present'
+                };
             });
-            return "Dev2026" + String(maxNum + 1).padStart(3, '0');
-        }
-
-        // Public Form Registration Handler
-        document.getElementById('public-reg-form').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            const studentId = generateNextStudentId();
-            const name = document.getElementById('pub-name').value.trim();
-            const pkg = document.getElementById('pub-package').value;
-
-            const newStudent = {
-                studentId: studentId,
-                name: name,
-                email: document.getElementById('pub-email').value.trim(),
-                phone: document.getElementById('pub-phone').value.trim(),
-                gender: document.getElementById('pub-gender').value,
-                address: document.getElementById('pub-address').value.trim(),
-                package: pkg,
-                paidFee: 0,
-                createdAt: new Date().toISOString()
-            };
 
             try {
-                await addDoc(collection(db, "students"), newStudent);
-                
-                document.getElementById('modal-student-id').innerText = studentId;
-                document.getElementById('modal-student-name').innerText = name;
-                document.getElementById('modal-student-pkg').innerText = pkg;
-                document.getElementById('welcome-modal').style.display = 'flex';
-
-                this.reset();
+                await addDoc(collection(db, "attendance"), {
+                    coursePackage: pkg,
+                    date: date,
+                    markedBy: window.currentUser ? window.currentUser.name : 'Unknown',
+                    records: records,
+                    createdAt: new Date().toISOString()
+                });
+                alert("Attendance register saved successfully!");
             } catch (err) {
-                alert("Error submitting registration: " + err.message);
+                alert("Error saving attendance: " + err.message);
             }
-        });
-
-        window.closeModal = function() {
-            document.getElementById('welcome-modal').style.display = 'none';
         };
-
-        // Initialize lecturer cache for sign-in checking before login
-        onSnapshot(collection(db, "lecturers"), (snapshot) => {
-            window.lecturersList = [];
-            snapshot.forEach(docSnap => {
-                window.lecturersList.push({ firestoreId: docSnap.id, ...docSnap.data() });
-            });
-        });
     </script>
 </body>
 </html>
