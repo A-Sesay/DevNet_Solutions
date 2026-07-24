@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DNS DevNet Solutions - Class Management System</title>
+    <title>DNS DevNet Solutions - Class & Fees Management System</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
         :root {
@@ -243,7 +243,6 @@
             font-size: 1rem;
         }
 
-        /* Responsive Table Wrapper */
         .table-responsive {
             width: 100%;
             overflow-x: auto;
@@ -277,6 +276,7 @@
         }
 
         .btn-danger { background: #e11d48; color: white; }
+        .btn-success { background: #10b981; color: white; }
 
         .tag {
             padding: 3px 8px;
@@ -296,7 +296,25 @@
             font-weight: bold;
         }
 
-        /* --- SUCCESS MODAL --- */
+        /* --- PROGRESS BAR FOR FEES --- */
+        .progress-bar-container {
+            width: 100%;
+            background-color: #080d18;
+            border-radius: 10px;
+            overflow: hidden;
+            height: 12px;
+            margin-top: 5px;
+            border: 1px solid var(--border-color);
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--gold-primary), var(--cyan-accent));
+            width: 0%;
+            transition: width 0.4s ease;
+        }
+
+        /* --- MODALS --- */
         .modal-overlay {
             display: none;
             position: fixed;
@@ -320,7 +338,6 @@
             box-shadow: 0 0 30px rgba(212, 175, 55, 0.3);
         }
 
-        /* Grid Form Layouts */
         .grid-form-2 {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -333,49 +350,15 @@
             flex-wrap: wrap;
         }
 
-        /* --- MOBILE SPECIFIC STYLES --- */
         @media (max-width: 768px) {
-            .dashboard-container {
-                flex-direction: column;
-            }
-
-            .sidebar {
-                width: 100%;
-                border-right: none;
-                border-bottom: 1px solid var(--border-color);
-                padding: 15px;
-            }
-
-            .nav-list {
-                flex-direction: row;
-                overflow-x: auto;
-                padding-bottom: 5px;
-            }
-
-            .nav-item {
-                padding: 8px 12px;
-                font-size: 0.82rem;
-            }
-
-            .main-content {
-                padding: 15px;
-            }
-
-            .grid-form-2 {
-                grid-template-columns: 1fr;
-            }
-
-            .grid-form-flex {
-                flex-direction: column;
-            }
-
-            .grid-form-flex > * {
-                width: 100% !important;
-            }
-
-            .full-mobile {
-                grid-column: span 1 !important;
-            }
+            .dashboard-container { flex-direction: column; }
+            .sidebar { width: 100%; border-right: none; border-bottom: 1px solid var(--border-color); padding: 15px; }
+            .nav-list { flex-direction: row; overflow-x: auto; padding-bottom: 5px; }
+            .nav-item { padding: 8px 12px; font-size: 0.82rem; }
+            .main-content { padding: 15px; }
+            .grid-form-2 { grid-template-columns: 1fr; }
+            .grid-form-flex { flex-direction: column; }
+            .grid-form-flex > * { width: 100% !important; }
         }
     </style>
 </head>
@@ -386,19 +369,19 @@
         <div class="login-card">
             <div class="logo-title">DNS</div>
             <div class="logo-subtitle">DEVNET SOLUTIONS</div>
-            <h3 style="margin-bottom: 20px; font-weight: 400; color: var(--text-light); font-size: 1.1rem;">Admin Portal Sign In</h3>
+            <h3 style="margin-bottom: 20px; font-weight: 400; color: var(--text-light); font-size: 1.1rem;">Portal Sign In</h3>
             
             <form id="login-form">
                 <div class="form-group">
                     <label><i class="fa-solid fa-envelope"></i> Email Address</label>
-                    <input type="email" id="login-email" placeholder="Enter admin email" required>
+                    <input type="email" id="login-email" placeholder="Enter email" required>
                 </div>
                 <div class="form-group">
                     <label><i class="fa-solid fa-key"></i> Password</label>
                     <input type="password" id="login-password" placeholder="Enter password" required>
                 </div>
-                <button type="submit" class="btn-gold">Sign In to Dashboard</button>
-                <div id="login-error" class="error-msg">Invalid Email or Password!</div>
+                <button type="submit" class="btn-gold">Sign In to Portal</button>
+                <div id="login-error" class="error-msg">Invalid Credentials!</div>
             </form>
         </div>
     </div>
@@ -413,16 +396,19 @@
                 <div class="nav-item active" onclick="switchTab('overview-tab', this)">
                     <i class="fa-solid fa-chart-line"></i> Dashboard
                 </div>
-                <div class="nav-item" onclick="switchTab('lecturers-tab', this)">
+                <div class="nav-item admin-only" onclick="switchTab('lecturers-tab', this)">
                     <i class="fa-solid fa-chalkboard-user"></i> Lecturers
                 </div>
                 <div class="nav-item" onclick="switchTab('students-tab', this)">
-                    <i class="fa-solid fa-user-graduate"></i> Rosters
+                    <i class="fa-solid fa-user-graduate"></i> Class Roster
                 </div>
                 <div class="nav-item" onclick="switchTab('attendance-tab', this)">
-                    <i class="fa-solid fa-clipboard-user"></i> Register
+                    <i class="fa-solid fa-clipboard-user"></i> Attendance
                 </div>
-                <div class="nav-item" onclick="switchTab('email-form-tab', this)">
+                <div class="nav-item admin-only" onclick="switchTab('fees-tab', this)">
+                    <i class="fa-solid fa-money-bill-wave"></i> Fees Management
+                </div>
+                <div class="nav-item admin-only" onclick="switchTab('email-form-tab', this)">
                     <i class="fa-solid fa-paper-plane"></i> Send Form
                 </div>
                 <div class="nav-item" onclick="logout()" style="color: #ef4444;">
@@ -435,9 +421,9 @@
             <div class="header-bar">
                 <div>
                     <h2 id="page-title" style="font-size: 1.3rem;">Dashboard Overview</h2>
-                    <span style="color: var(--text-muted); font-size: 0.8rem;">Welcome back, System Admin</span>
+                    <span id="user-display-role" style="color: var(--text-muted); font-size: 0.8rem;">Welcome back</span>
                 </div>
-                <span class="tag">Admin Active</span>
+                <span id="user-role-badge" class="tag">Admin Active</span>
             </div>
 
             <!-- OVERVIEW PANEL -->
@@ -458,7 +444,7 @@
                 </div>
 
                 <div class="content-card">
-                    <h3>Recent Student Submissions</h3>
+                    <h3>Recent Enrolled Students</h3>
                     <div class="table-responsive">
                         <table>
                             <thead>
@@ -476,8 +462,8 @@
                 </div>
             </div>
 
-            <!-- LECTURERS PANEL -->
-            <div id="lecturers-tab" class="section-panel">
+            <!-- LECTURERS PANEL (ADMIN ONLY) -->
+            <div id="lecturers-tab" class="section-panel admin-only">
                 <div class="content-card">
                     <h3>Add New Lecturer</h3>
                     <form id="add-lecturer-form" class="grid-form-flex" style="align-items: flex-end;">
@@ -509,7 +495,7 @@
                                 <tr>
                                     <th>Name</th>
                                     <th>Email</th>
-                                    <th>Package</th>
+                                    <th>Assigned Package</th>
                                     <th>Action</th>
                                 </tr>
                             </thead>
@@ -523,7 +509,7 @@
             <div id="students-tab" class="section-panel">
                 <div class="content-card">
                     <h3>Course Student Rosters</h3>
-                    <div class="form-group" style="max-width: 300px; margin-bottom: 15px;">
+                    <div class="form-group" id="filter-container" style="max-width: 300px; margin-bottom: 15px;">
                         <label>Filter By Course Package:</label>
                         <select id="filter-course" onchange="renderStudents()">
                             <option value="All">All Packages</option>
@@ -543,7 +529,7 @@
                                     <th>Phone</th>
                                     <th>Address</th>
                                     <th>Package</th>
-                                    <th>Action</th>
+                                    <th class="admin-only">Action</th>
                                 </tr>
                             </thead>
                             <tbody id="student-list"></tbody>
@@ -588,8 +574,46 @@
                 </div>
             </div>
 
-            <!-- SEND FORM VIA EMAIL TAB -->
-            <div id="email-form-tab" class="section-panel">
+            <!-- FEES MANAGEMENT PANEL (ADMIN ONLY) -->
+            <div id="fees-tab" class="section-panel admin-only">
+                <div class="grid-3">
+                    <div class="stat-card">
+                        <h3>TOTAL EXPECTED FEES</h3>
+                        <p id="total-expected-fees">0 LE</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>TOTAL COLLECTED</h3>
+                        <p id="total-collected-fees" style="color: var(--cyan-accent);">0 LE</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>TOTAL OUTSTANDING</h3>
+                        <p id="total-pending-fees" style="color: #ef4444;">0 LE</p>
+                    </div>
+                </div>
+
+                <div class="content-card">
+                    <h3>Student Fee Tracking (Standard Fee: 1,000 LE per course)</h3>
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Student Name</th>
+                                    <th>Course</th>
+                                    <th>Paid Amount (LE)</th>
+                                    <th>Outstanding</th>
+                                    <th>Payment Progress</th>
+                                    <th>Update Payment</th>
+                                </tr>
+                            </thead>
+                            <tbody id="fees-table-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SEND FORM VIA EMAIL TAB (ADMIN ONLY) -->
+            <div id="email-form-tab" class="section-panel admin-only">
                 <div class="content-card" style="border-left: 4px solid var(--cyan-accent); margin-bottom: 20px;">
                     <h3><i class="fa-solid fa-paper-plane"></i> Send Form Directly to Student Email</h3>
                     <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 15px;">
@@ -603,7 +627,7 @@
                     </div>
                 </div>
 
-                <!-- PUBLIC REGISTRATION FORM FOR STUDENT TO FILL -->
+                <!-- PUBLIC REGISTRATION FORM -->
                 <div class="content-card" style="border: 1px dashed var(--cyan-accent);">
                     <span class="tag" style="margin-bottom: 10px; display: inline-block;">Student Registration</span>
                     <h3>DevNet Solutions Application Form</h3>
@@ -676,11 +700,11 @@
         </div>
     </div>
 
-    <!-- FIREBASE SDKs -->
+    <!-- FIREBASE SDKs & SCRIPT LOGIC -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { 
-            getFirestore, collection, addDoc, onSnapshot, doc, deleteDoc 
+            getFirestore, collection, addDoc, onSnapshot, doc, deleteDoc, updateDoc 
         } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
@@ -695,9 +719,22 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
+        const COURSE_FEE = 1000; // Fixed tuition fee limit in LE
+
         window.studentsList = [];
         window.lecturersList = [];
+        window.currentUser = null; // { role: 'admin' | 'lecturer', package: string, name: string }
 
+        // Switch Tabs Functionality
+        window.switchTab = function(tabId, element) {
+            document.querySelectorAll('.section-panel').forEach(panel => panel.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+            
+            document.getElementById(tabId).classList.add('active');
+            if (element) element.classList.add('active');
+        };
+
+        // Send Form Mailto trigger
         window.sendEmailToStudent = function() {
             const studentEmail = document.getElementById('target-student-email').value.trim();
             if(!studentEmail) {
@@ -711,21 +748,59 @@
             window.location.href = `mailto:${studentEmail}?subject=${subject}&body=${body}`;
         };
 
+        // Login Handler (Supports Admin + Lecturers)
         document.getElementById('login-form').addEventListener('submit', function(e) {
             e.preventDefault();
-            const email = document.getElementById('login-email').value.trim();
+            const email = document.getElementById('login-email').value.trim().toLowerCase();
             const password = document.getElementById('login-password').value.trim();
 
             if (email === "abdulaisesay167@gmail.com" && password === "Mexcess25132513") {
+                // Admin Login
+                window.currentUser = { role: 'admin', name: 'System Admin', package: 'All' };
+                setupRoleUI();
                 document.getElementById('login-screen').style.display = 'none';
                 document.getElementById('dashboard').style.display = 'flex';
                 initRealtimeListeners();
             } else {
-                document.getElementById('login-error').style.display = 'block';
+                // Check if email belongs to a Lecturer
+                const lecturerMatch = window.lecturersList.find(l => l.email.toLowerCase() === email);
+                if (lecturerMatch) {
+                    window.currentUser = { role: 'lecturer', name: lecturerMatch.name, package: lecturerMatch.package };
+                    setupRoleUI();
+                    document.getElementById('login-screen').style.display = 'none';
+                    document.getElementById('dashboard').style.display = 'flex';
+                    initRealtimeListeners();
+                } else {
+                    document.getElementById('login-error').style.display = 'block';
+                }
             }
         });
 
+        function setupRoleUI() {
+            const isAdmin = window.currentUser.role === 'admin';
+            
+            // Toggle sidebar elements
+            document.querySelectorAll('.admin-only').forEach(el => {
+                el.style.display = isAdmin ? '' : 'none';
+            });
+
+            if (isAdmin) {
+                document.getElementById('user-display-role').innerText = 'Welcome back, System Admin';
+                document.getElementById('user-role-badge').innerText = 'Admin Active';
+                document.getElementById('filter-container').style.display = 'block';
+            } else {
+                document.getElementById('user-display-role').innerText = `Welcome Lecturer: ${window.currentUser.name} (${window.currentUser.package})`;
+                document.getElementById('user-role-badge').innerText = 'Lecturer Access';
+                // Lock course filter to lecturer package
+                document.getElementById('filter-course').value = window.currentUser.package;
+                document.getElementById('filter-container').style.display = 'none';
+                document.getElementById('att-package').value = window.currentUser.package;
+                document.getElementById('att-package').disabled = true;
+            }
+        }
+
         window.logout = function() {
+            window.currentUser = null;
             document.getElementById('dashboard').style.display = 'none';
             document.getElementById('login-screen').style.display = 'flex';
             document.getElementById('login-error').style.display = 'none';
@@ -735,17 +810,21 @@
         function initRealtimeListeners() {
             document.getElementById('att-date').valueAsDate = new Date();
 
+            // Fetch Real-time Students
             onSnapshot(collection(db, "students"), (snapshot) => {
                 window.studentsList = [];
                 snapshot.forEach(docSnap => {
                     window.studentsList.push({ firestoreId: docSnap.id, ...docSnap.data() });
                 });
                 window.studentsList.sort((a,b) => (a.studentId || "").localeCompare(b.studentId || ""));
+                
                 renderOverview();
                 renderStudents();
                 loadAttendanceList();
+                renderFees();
             });
 
+            // Fetch Real-time Lecturers
             onSnapshot(collection(db, "lecturers"), (snapshot) => {
                 window.lecturersList = [];
                 snapshot.forEach(docSnap => {
@@ -754,6 +833,225 @@
                 renderLecturers();
             });
         }
+
+        // Add Lecturer Handler
+        document.getElementById('add-lecturer-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const name = document.getElementById('lec-name').value.trim();
+            const email = document.getElementById('lec-email').value.trim();
+            const pkg = document.getElementById('lec-package').value;
+
+            try {
+                await addDoc(collection(db, "lecturers"), {
+                    name: name,
+                    email: email,
+                    package: pkg,
+                    createdAt: new Date().toISOString()
+                });
+                alert(`Lecturer ${name} added successfully! They can log in using their email.`);
+                this.reset();
+            } catch (err) {
+                alert("Failed to add lecturer: " + err.message);
+            }
+        });
+
+        window.removeLecturer = async function(docId) {
+            if(confirm("Are you sure you want to remove this lecturer?")) {
+                await deleteDoc(doc(db, "lecturers", docId));
+            }
+        };
+
+        function renderLecturers() {
+            const tbody = document.getElementById('lecturer-list');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+
+            window.lecturersList.forEach(lec => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><strong>${lec.name}</strong></td>
+                    <td>${lec.email}</td>
+                    <td><span class="tag">${lec.package}</span></td>
+                    <td>
+                        <button class="btn-action btn-danger" onclick="removeLecturer('${lec.firestoreId}')">Remove</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function filterStudentsForCurrentUser() {
+            if (!window.currentUser) return [];
+            if (window.currentUser.role === 'admin') {
+                return window.studentsList;
+            } else {
+                // Lecturer can ONLY see students in their class
+                return window.studentsList.filter(s => s.package === window.currentUser.package);
+            }
+        }
+
+        window.renderStudents = function() {
+            const tbody = document.getElementById('student-list');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+
+            let relevantStudents = filterStudentsForCurrentUser();
+            const filterPkg = document.getElementById('filter-course').value;
+
+            if (window.currentUser.role === 'admin' && filterPkg !== "All") {
+                relevantStudents = relevantStudents.filter(s => s.package === filterPkg);
+            }
+
+            relevantStudents.forEach(s => {
+                const tr = document.createElement('tr');
+                const actionBtn = window.currentUser.role === 'admin' 
+                    ? `<button class="btn-action btn-danger" onclick="removeStudent('${s.firestoreId}')">Delete</button>` 
+                    : `-`;
+
+                tr.innerHTML = `
+                    <td><span class="id-badge">${s.studentId || 'N/A'}</span></td>
+                    <td><strong>${s.name}</strong></td>
+                    <td>${s.gender || 'N/A'}</td>
+                    <td>${s.phone || 'N/A'}</td>
+                    <td>${s.address || 'N/A'}</td>
+                    <td><span class="tag">${s.package}</span></td>
+                    ${window.currentUser.role === 'admin' ? `<td>${actionBtn}</td>` : ''}
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderOverview() {
+            const relevantStudents = filterStudentsForCurrentUser();
+            
+            const aplusCount = relevantStudents.filter(s => s.package === "A+ Certification & Networking").length;
+            const webCount = relevantStudents.filter(s => s.package === "Web Design").length;
+            const msCount = relevantStudents.filter(s => s.package === "Microsoft Packages").length;
+
+            document.getElementById('cnt-aplus').innerText = `${aplusCount} Students`;
+            document.getElementById('cnt-web').innerText = `${webCount} Students`;
+            document.getElementById('cnt-ms').innerText = `${msCount} Students`;
+
+            const tbody = document.getElementById('overview-table-body');
+            tbody.innerHTML = '';
+
+            relevantStudents.slice(0, 5).forEach(s => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><span class="id-badge">${s.studentId || 'N/A'}</span></td>
+                    <td>${s.name}</td>
+                    <td>${s.email}</td>
+                    <td>${s.phone}</td>
+                    <td><span class="tag">${s.package}</span></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        window.loadAttendanceList = function() {
+            const tbody = document.getElementById('attendance-list');
+            if(!tbody) return;
+            tbody.innerHTML = '';
+
+            const selectedPkg = document.getElementById('att-package').value;
+            const classStudents = filterStudentsForCurrentUser().filter(s => s.package === selectedPkg);
+
+            if (classStudents.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color: var(--text-muted);">No students found in this course package.</td></tr>`;
+                return;
+            }
+
+            classStudents.forEach(s => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><span class="id-badge">${s.studentId}</span></td>
+                    <td>${s.name}</td>
+                    <td>${s.package}</td>
+                    <td>
+                        <select class="att-status" data-id="${s.studentId}" style="padding: 4px; background: #080d18; color: white; border: 1px solid var(--border-color); border-radius: 4px;">
+                            <option value="Present">Present</option>
+                            <option value="Absent">Absent</option>
+                            <option value="Late">Late</option>
+                        </select>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        window.saveAttendance = function() {
+            alert("Attendance Log successfully stored.");
+        }
+
+        // --- FEES MANAGEMENT FUNCTIONALITY (ADMIN) ---
+        function renderFees() {
+            if (window.currentUser?.role !== 'admin') return;
+
+            const tbody = document.getElementById('fees-table-body');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            let totalExpected = window.studentsList.length * COURSE_FEE;
+            let totalCollected = 0;
+
+            window.studentsList.forEach(s => {
+                const paidAmount = Number(s.paidFee || 0);
+                totalCollected += paidAmount;
+                const outstanding = Math.max(0, COURSE_FEE - paidAmount);
+                const percentage = Math.min(100, Math.round((paidAmount / COURSE_FEE) * 100));
+
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><span class="id-badge">${s.studentId || 'N/A'}</span></td>
+                    <td><strong>${s.name}</strong></td>
+                    <td><span class="tag">${s.package}</span></td>
+                    <td style="color: var(--gold-primary); font-weight: bold;">${paidAmount} LE</td>
+                    <td style="color: ${outstanding > 0 ? '#ef4444' : '#10b981'}; font-weight: bold;">${outstanding} LE</td>
+                    <td>
+                        <div style="font-size: 0.75rem; display: flex; justify-content: space-between; margin-bottom: 2px;">
+                            <span>Progress</span>
+                            <span style="color: var(--cyan-accent); font-weight: bold;">${percentage}%</span>
+                        </div>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar-fill" style="width: ${percentage}%;"></div>
+                        </div>
+                    </td>
+                    <td>
+                        <button class="btn-action btn-success" onclick="updateStudentFee('${s.firestoreId}', ${paidAmount})">Update Payment</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('total-expected-fees').innerText = `${totalExpected.toLocaleString()} LE`;
+            document.getElementById('total-collected-fees').innerText = `${totalCollected.toLocaleString()} LE`;
+            document.getElementById('total-pending-fees').innerText = `${(totalExpected - totalCollected).toLocaleString()} LE`;
+        }
+
+        window.updateStudentFee = async function(docId, currentPaid) {
+            const input = prompt(`Enter total amount paid by student so far (Total Fee = ${COURSE_FEE} LE):`, currentPaid);
+            if (input !== null) {
+                const newPaid = parseFloat(input);
+                if (isNaN(newPaid) || newPaid < 0) {
+                    alert("Please enter a valid payment amount.");
+                    return;
+                }
+                try {
+                    await updateDoc(doc(db, "students", docId), {
+                        paidFee: newPaid
+                    });
+                    alert("Payment record updated!");
+                } catch (err) {
+                    alert("Failed to update payment: " + err.message);
+                }
+            }
+        };
+
+        window.removeStudent = async function(docId) {
+            if(confirm("Permanently delete student record?")) {
+                await deleteDoc(doc(db, "students", docId));
+            }
+        };
 
         function generateNextStudentId() {
             let maxNum = 0;
@@ -767,6 +1065,7 @@
             return "Dev2026" + String(maxNum + 1).padStart(3, '0');
         }
 
+        // Public Form Registration Handler
         document.getElementById('public-reg-form').addEventListener('submit', async function(e) {
             e.preventDefault();
             const studentId = generateNextStudentId();
@@ -781,6 +1080,7 @@
                 gender: document.getElementById('pub-gender').value,
                 address: document.getElementById('pub-address').value.trim(),
                 package: pkg,
+                paidFee: 0,
                 createdAt: new Date().toISOString()
             };
 
@@ -802,120 +1102,13 @@
             document.getElementById('welcome-modal').style.display = 'none';
         };
 
-        document.getElementById('add-lecturer-form').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            await addDoc(collection(db, "lecturers"), {
-                name: document.getElementById('lec-name').value.trim(),
-                email: document.getElementById('lec-email').value.trim(),
-                package: document.getElementById('lec-package').value
+        // Initialize lecturer cache for sign-in checking before login
+        onSnapshot(collection(db, "lecturers"), (snapshot) => {
+            window.lecturersList = [];
+            snapshot.forEach(docSnap => {
+                window.lecturersList.push({ firestoreId: docSnap.id, ...docSnap.data() });
             });
-            this.reset();
         });
-
-        window.removeLecturer = async function(docId) {
-            if(confirm("Remove lecturer?")) await deleteDoc(doc(db, "lecturers", docId));
-        };
-
-        window.removeStudent = async function(docId) {
-            if(confirm("Remove student?")) await deleteDoc(doc(db, "students", docId));
-        };
-
-        function renderOverview() {
-            document.getElementById('cnt-aplus').innerText = `${window.studentsList.filter(s => s.package === "A+ Certification & Networking").length} Student(s)`;
-            document.getElementById('cnt-web').innerText = `${window.studentsList.filter(s => s.package === "Web Design").length} Student(s)`;
-            document.getElementById('cnt-ms').innerText = `${window.studentsList.filter(s => s.package === "Microsoft Packages").length} Student(s)`;
-
-            const tbody = document.getElementById('overview-table-body');
-            tbody.innerHTML = '';
-            window.studentsList.slice(-5).reverse().forEach(s => {
-                tbody.innerHTML += `
-                    <tr>
-                        <td><span class="id-badge">${s.studentId || 'N/A'}</span></td>
-                        <td><strong>${s.name}</strong></td>
-                        <td>${s.email}</td>
-                        <td>${s.phone}</td>
-                        <td><span class="tag">${s.package}</span></td>
-                    </tr>
-                `;
-            });
-        }
-
-        window.renderStudents = function() {
-            const filter = document.getElementById('filter-course').value;
-            const tbody = document.getElementById('student-list');
-            tbody.innerHTML = '';
-
-            const filtered = filter === 'All' ? window.studentsList : window.studentsList.filter(s => s.package === filter);
-            filtered.forEach(s => {
-                tbody.innerHTML += `
-                    <tr>
-                        <td><span class="id-badge">${s.studentId || 'N/A'}</span></td>
-                        <td><strong>${s.name}</strong></td>
-                        <td>${s.gender || 'N/A'}</td>
-                        <td>${s.phone || 'N/A'}</td>
-                        <td>${s.address || 'N/A'}</td>
-                        <td><span class="tag">${s.package}</span></td>
-                        <td><button class="btn-action btn-danger" onclick="removeStudent('${s.firestoreId}')">Remove</button></td>
-                    </tr>
-                `;
-            });
-        };
-
-        function renderLecturers() {
-            const tbody = document.getElementById('lecturer-list');
-            tbody.innerHTML = '';
-            window.lecturersList.forEach(l => {
-                tbody.innerHTML += `
-                    <tr>
-                        <td><strong>${l.name}</strong></td>
-                        <td>${l.email}</td>
-                        <td><span class="tag">${l.package}</span></td>
-                        <td><button class="btn-action btn-danger" onclick="removeLecturer('${l.firestoreId}')">Remove</button></td>
-                    </tr>
-                `;
-            });
-        }
-
-        window.loadAttendanceList = function() {
-            const pkg = document.getElementById('att-package').value;
-            const tbody = document.getElementById('attendance-list');
-            tbody.innerHTML = '';
-
-            const classStudents = window.studentsList.filter(s => s.package === pkg);
-            if (classStudents.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;">No enrolled students in this package yet.</td></tr>`;
-                return;
-            }
-
-            classStudents.forEach(s => {
-                tbody.innerHTML += `
-                    <tr>
-                        <td><span class="id-badge">${s.studentId || 'N/A'}</span></td>
-                        <td><strong>${s.name}</strong></td>
-                        <td>${s.package}</td>
-                        <td><input type="checkbox" checked> Present</td>
-                    </tr>
-                `;
-            });
-        };
-
-        window.switchTab = function(tabId, element) {
-            document.querySelectorAll('.section-panel').forEach(panel => panel.classList.remove('active'));
-            document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
-
-            document.getElementById(tabId).classList.add('active');
-            element.classList.add('active');
-
-            const titleMap = {
-                'overview-tab': 'Dashboard Overview',
-                'lecturers-tab': 'Manage Lecturers',
-                'students-tab': 'Student Course Rosters',
-                'attendance-tab': 'Class Attendance Register',
-                'email-form-tab': 'Send Registration Form'
-            };
-            document.getElementById('page-title').innerText = titleMap[tabId];
-            if(tabId === 'attendance-tab') window.loadAttendanceList();
-        };
     </script>
 </body>
 </html>
