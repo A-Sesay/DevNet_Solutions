@@ -1,0 +1,841 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DNS DevNet Solutions - Class Management System</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #0a111e;
+            --card-bg: #111c2e;
+            --gold-primary: #d4af37;
+            --gold-hover: #f3cf55;
+            --cyan-accent: #00d2ff;
+            --text-light: #f1f5f9;
+            --text-muted: #94a3b8;
+            --border-color: #1e293b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            min-height: 100vh;
+        }
+
+        /* --- AUTH / LOGIN SECTION --- */
+        .login-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: radial-gradient(circle at center, #1a273d 0%, #0a111e 100%);
+            padding: 20px;
+        }
+
+        .login-card {
+            background: var(--card-bg);
+            border: 2px solid var(--gold-primary);
+            border-radius: 12px;
+            padding: 40px;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: 0 0 25px rgba(212, 175, 55, 0.2);
+            text-align: center;
+        }
+
+        .logo-title {
+            font-size: 2.2rem;
+            font-weight: 900;
+            color: var(--gold-primary);
+            letter-spacing: 2px;
+            margin-bottom: 2px;
+        }
+
+        .logo-subtitle {
+            color: var(--cyan-accent);
+            font-size: 0.9rem;
+            letter-spacing: 3px;
+            margin-bottom: 25px;
+            font-weight: 600;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            background: #080d18;
+            color: var(--text-light);
+            outline: none;
+            transition: border 0.3s;
+        }
+
+        .form-group input:focus, .form-group select:focus {
+            border-color: var(--cyan-accent);
+        }
+
+        .btn-gold {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, var(--gold-primary), #b8860b);
+            border: none;
+            color: #000;
+            font-weight: bold;
+            font-size: 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: 0.3s;
+            margin-top: 10px;
+        }
+
+        .btn-gold:hover {
+            background: linear-gradient(135deg, var(--gold-hover), var(--gold-primary));
+            box-shadow: 0 0 12px rgba(212, 175, 55, 0.4);
+        }
+
+        .error-msg {
+            color: #ff4d4d;
+            font-size: 0.85rem;
+            margin-top: 10px;
+            display: none;
+        }
+
+        /* --- DASHBOARD LAYOUT --- */
+        .dashboard-container {
+            display: none;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            width: 260px;
+            background: var(--card-bg);
+            border-right: 1px solid var(--border-color);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar h2 {
+            color: var(--gold-primary);
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+        }
+
+        .sidebar p {
+            color: var(--cyan-accent);
+            font-size: 0.75rem;
+            letter-spacing: 2px;
+            margin-bottom: 30px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            color: var(--text-muted);
+            border-radius: 6px;
+            cursor: pointer;
+            margin-bottom: 8px;
+            transition: 0.2s;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            background: rgba(0, 210, 255, 0.1);
+            color: var(--cyan-accent);
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 30px;
+            background: var(--bg-dark);
+            overflow-y: auto;
+        }
+
+        .header-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 25px;
+        }
+
+        .section-panel {
+            display: none;
+        }
+
+        .section-panel.active {
+            display: block;
+        }
+
+        /* --- CARDS & TABLES --- */
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid var(--gold-primary);
+        }
+
+        .stat-card h3 {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .stat-card p {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: var(--text-light);
+            margin-top: 5px;
+        }
+
+        .content-card {
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 25px;
+            border: 1px solid var(--border-color);
+        }
+
+        .content-card h3 {
+            color: var(--gold-primary);
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th, td {
+            padding: 12px;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.88rem;
+        }
+
+        th {
+            color: var(--cyan-accent);
+            font-weight: 600;
+        }
+
+        .btn-action {
+            padding: 6px 12px;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+
+        .btn-danger { background: #e11d48; color: white; }
+
+        .tag {
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            background: rgba(0,210,255,0.15);
+            color: var(--cyan-accent);
+        }
+
+        .id-badge {
+            background: rgba(212, 175, 55, 0.2);
+            color: var(--gold-primary);
+            padding: 3px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-weight: bold;
+        }
+
+        /* --- SUCCESS MODAL --- */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(10, 17, 30, 0.85);
+            backdrop-filter: blur(5px);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal-card {
+            background: var(--card-bg);
+            border: 2px solid var(--gold-primary);
+            border-radius: 12px;
+            padding: 35px;
+            max-width: 450px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 0 30px rgba(212, 175, 55, 0.3);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 1. LOGIN SCREEN -->
+    <div id="login-screen" class="login-wrapper">
+        <div class="login-card">
+            <div class="logo-title">DNS</div>
+            <div class="logo-subtitle">DEVNET SOLUTIONS</div>
+            <h3 style="margin-bottom: 20px; font-weight: 400; color: var(--text-light);">Admin Portal Sign In</h3>
+            
+            <form id="login-form">
+                <div class="form-group">
+                    <label><i class="fa-solid fa-envelope"></i> Email Address</label>
+                    <input type="email" id="login-email" placeholder="Enter admin email" required>
+                </div>
+                <div class="form-group">
+                    <label><i class="fa-solid fa-key"></i> Password</label>
+                    <input type="password" id="login-password" placeholder="Enter your password" required>
+                </div>
+                <button type="submit" class="btn-gold">Sign In to Dashboard</button>
+                <div id="login-error" class="error-msg">Invalid Email or Password!</div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 2. MAIN DASHBOARD SYSTEM -->
+    <div id="dashboard" class="dashboard-container">
+        <div class="sidebar">
+            <h2>DNS</h2>
+            <p>DEVNET SOLUTIONS</p>
+            
+            <div class="nav-item active" onclick="switchTab('overview-tab', this)">
+                <i class="fa-solid fa-chart-line"></i> Dashboard
+            </div>
+            <div class="nav-item" onclick="switchTab('lecturers-tab', this)">
+                <i class="fa-solid fa-chalkboard-user"></i> Lecturers
+            </div>
+            <div class="nav-item" onclick="switchTab('students-tab', this)">
+                <i class="fa-solid fa-user-graduate"></i> Student Rosters
+            </div>
+            <div class="nav-item" onclick="switchTab('attendance-tab', this)">
+                <i class="fa-solid fa-clipboard-user"></i> Attendance Register
+            </div>
+            <div class="nav-item" onclick="switchTab('email-form-tab', this)">
+                <i class="fa-solid fa-paper-plane"></i> Send Form to Student
+            </div>
+
+            <div style="margin-top: auto;">
+                <div class="nav-item" onclick="logout()" style="color: #ef4444;">
+                    <i class="fa-solid fa-right-from-bracket"></i> Logout
+                </div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="header-bar">
+                <div>
+                    <h2 id="page-title">Dashboard Overview</h2>
+                    <span style="color: var(--text-muted); font-size: 0.85rem;">Welcome back, System Admin</span>
+                </div>
+                <span class="tag">Logged in as Admin</span>
+            </div>
+
+            <!-- OVERVIEW PANEL -->
+            <div id="overview-tab" class="section-panel active">
+                <div class="grid-3">
+                    <div class="stat-card">
+                        <h3>A+ & NETWORKING PACKAGE</h3>
+                        <p id="cnt-aplus">0 Students</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>WEB DESIGN PACKAGE</h3>
+                        <p id="cnt-web">0 Students</p>
+                    </div>
+                    <div class="stat-card">
+                        <h3>MICROSOFT PACKAGES</h3>
+                        <p id="cnt-ms">0 Students</p>
+                    </div>
+                </div>
+
+                <div class="content-card">
+                    <h3>Recent Student Submissions</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Student ID</th>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Phone</th>
+                                <th>Package</th>
+                            </tr>
+                        </thead>
+                        <tbody id="overview-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- LECTURERS PANEL -->
+            <div id="lecturers-tab" class="section-panel">
+                <div class="content-card">
+                    <h3>Add New Lecturer</h3>
+                    <form id="add-lecturer-form" style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 15px; align-items: end;">
+                        <div class="form-group" style="margin: 0;">
+                            <label>Full Name</label>
+                            <input type="text" id="lec-name" required placeholder="e.g. John Doe">
+                        </div>
+                        <div class="form-group" style="margin: 0;">
+                            <label>Email Address</label>
+                            <input type="email" id="lec-email" required placeholder="lecturer@devnet.com">
+                        </div>
+                        <div class="form-group" style="margin: 0;">
+                            <label>Assigned Package</label>
+                            <select id="lec-package">
+                                <option>A+ Certification & Networking</option>
+                                <option>Web Design</option>
+                                <option>Microsoft Packages</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn-gold" style="height: 42px; margin: 0;">Add Lecturer</button>
+                    </form>
+                </div>
+
+                <div class="content-card">
+                    <h3>Lecturer Directory</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Assigned Package</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="lecturer-list"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- STUDENTS PANEL -->
+            <div id="students-tab" class="section-panel">
+                <div class="content-card">
+                    <h3>Course Student Rosters</h3>
+                    <div class="form-group" style="max-width: 300px; margin-bottom: 15px;">
+                        <label>Filter By Course Package:</label>
+                        <select id="filter-course" onchange="renderStudents()">
+                            <option value="All">All Packages</option>
+                            <option value="A+ Certification & Networking">A+ Certification & Networking</option>
+                            <option value="Web Design">Web Design</option>
+                            <option value="Microsoft Packages">Microsoft Packages</option>
+                        </select>
+                    </div>
+
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID Number</th>
+                                <th>Student Name</th>
+                                <th>Gender</th>
+                                <th>Phone</th>
+                                <th>Address</th>
+                                <th>Package</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="student-list"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ATTENDANCE PANEL -->
+            <div id="attendance-tab" class="section-panel">
+                <div class="content-card">
+                    <h3>Call Class Register</h3>
+                    <div style="display: flex; gap: 20px; margin-bottom: 20px;">
+                        <div class="form-group" style="flex: 1; margin: 0;">
+                            <label>Select Course Package</label>
+                            <select id="att-package" onchange="loadAttendanceList()">
+                                <option value="A+ Certification & Networking">A+ Certification & Networking</option>
+                                <option value="Web Design">Web Design</option>
+                                <option value="Microsoft Packages">Microsoft Packages</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="flex: 1; margin: 0;">
+                            <label>Date</label>
+                            <input type="date" id="att-date">
+                        </div>
+                    </div>
+
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID Number</th>
+                                <th>Student Name</th>
+                                <th>Course</th>
+                                <th>Status (Present/Absent)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="attendance-list"></tbody>
+                    </table>
+                    <button class="btn-gold" onclick="saveAttendance()" style="margin-top: 20px; width: auto; padding: 10px 25px;">Save Register Log</button>
+                </div>
+            </div>
+
+            <!-- SEND FORM VIA EMAIL TAB -->
+            <div id="email-form-tab" class="section-panel">
+                <div class="content-card" style="border-left: 4px solid var(--cyan-accent); margin-bottom: 25px;">
+                    <h3><i class="fa-solid fa-paper-plane"></i> Send Form Directly to Student Email</h3>
+                    <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 15px;">
+                        Enter the prospective student's email address below to open your email composer with the live registration form link automatically attached:
+                    </p>
+                    <div style="display: flex; gap: 10px; max-width: 600px;">
+                        <input type="email" id="target-student-email" placeholder="student@example.com" style="flex: 1; padding: 10px; background: #080d18; border: 1px solid var(--border-color); color: var(--text-light); border-radius: 6px;">
+                        <button class="btn-gold" onclick="sendEmailToStudent()" style="width: auto; margin: 0; padding: 10px 20px;">
+                            <i class="fa-solid fa-envelope"></i> Send Email
+                        </button>
+                    </div>
+                </div>
+
+                <!-- PUBLIC REGISTRATION FORM FOR STUDENT TO FILL -->
+                <div class="content-card" style="border: 1px dashed var(--cyan-accent);">
+                    <span class="tag" style="margin-bottom: 10px; display: inline-block;">Student Portal Registration</span>
+                    <h3>DevNet Solutions Official Application Form</h3>
+                    <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 20px;">
+                        Please enter your personal details below and click confirm to complete your registration.
+                    </p>
+
+                    <form id="public-reg-form" style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div class="form-group">
+                            <label>Full Name *</label>
+                            <input type="text" id="pub-name" required placeholder="Enter full name">
+                        </div>
+                        <div class="form-group">
+                            <label>Email Address *</label>
+                            <input type="email" id="pub-email" required placeholder="Enter email address">
+                        </div>
+                        <div class="form-group">
+                            <label>Phone Number *</label>
+                            <input type="tel" id="pub-phone" required placeholder="e.g. +232 73 221440">
+                        </div>
+                        <div class="form-group">
+                            <label>Gender *</label>
+                            <select id="pub-gender" required>
+                                <option value="">Select Gender</option>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="grid-column: span 2;">
+                            <label>Residential Address *</label>
+                            <input type="text" id="pub-address" required placeholder="Full residential address">
+                        </div>
+                        <div class="form-group" style="grid-column: span 2;">
+                            <label>Select Course Package *</label>
+                            <select id="pub-package" required>
+                                <option value="A+ Certification & Networking">A+ Certification & Networking (Combined Package)</option>
+                                <option value="Web Design">Web Design</option>
+                                <option value="Microsoft Packages">Microsoft Packages</option>
+                            </select>
+                        </div>
+                        <div style="grid-column: span 2;">
+                            <button type="submit" class="btn-gold"><i class="fa-solid fa-check-circle"></i> Confirm Registration</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- WELCOME MODAL OVERLAY -->
+    <div id="welcome-modal" class="modal-overlay">
+        <div class="modal-card">
+            <div style="font-size: 3rem; color: var(--gold-primary); margin-bottom: 15px;">
+                <i class="fa-solid fa-circle-check"></i>
+            </div>
+            <h2 style="color: var(--gold-primary); margin-bottom: 5px;">Welcome to DevNet Solutions!</h2>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 20px;">Your registration has been confirmed successfully.</p>
+            
+            <div style="background: #080d18; border: 1px solid var(--border-color); padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                <span style="font-size: 0.8rem; color: var(--cyan-accent); display: block; margin-bottom: 5px;">YOUR OFFICIAL STUDENT ID</span>
+                <span id="modal-student-id" style="font-size: 1.8rem; font-weight: bold; color: var(--gold-primary); font-family: monospace;">Dev2026001</span>
+            </div>
+
+            <p style="color: var(--text-light); font-size: 0.85rem; margin-bottom: 20px;">
+                Welcome <strong id="modal-student-name">Student</strong>! You have been enrolled in <strong id="modal-student-pkg" style="color: var(--cyan-accent);">Package</strong>. Please save your Student ID for class sign-ins.
+            </p>
+
+            <button class="btn-gold" onclick="closeModal()">Close & Continue</button>
+        </div>
+    </div>
+
+    <!-- FIREBASE SDKs -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { 
+            getFirestore, collection, addDoc, onSnapshot, doc, deleteDoc 
+        } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBWNkOlYW2tS9pYg7HaB6c8E9PeRjmMl-8",
+            authDomain: "imatt-attendance.firebaseapp.com",
+            projectId: "imatt-attendance",
+            storageBucket: "imatt-attendance.firebasestorage.app",
+            messagingSenderId: "629926774336",
+            appId: "1:629926774336:web:4f50984f244b75cda101a5"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        window.studentsList = [];
+        window.lecturersList = [];
+
+        // DISPATCH EMAIL WITH FORM LINK TO STUDENT
+        window.sendEmailToStudent = function() {
+            const studentEmail = document.getElementById('target-student-email').value.trim();
+            if(!studentEmail) {
+                alert("Please enter the student's email address first.");
+                return;
+            }
+            const formUrl = window.location.href.split('#')[0];
+            const subject = encodeURIComponent("DevNet Solutions - Course Registration Form");
+            const body = encodeURIComponent(`Hello,\n\nPlease complete your course registration using the link below:\n\n${formUrl}\n\nUpon submission, you will automatically receive your Student ID.\n\nBest regards,\nDevNet Solutions Team`);
+            
+            window.location.href = `mailto:${studentEmail}?subject=${subject}&body=${body}`;
+        };
+
+        // ADMIN LOGIN
+        document.getElementById('login-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value.trim();
+            const password = document.getElementById('login-password').value.trim();
+
+            if (email === "abdulaisesay167@gmail.com" && password === "Mexcess25132513") {
+                document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('dashboard').style.display = 'flex';
+                initRealtimeListeners();
+            } else {
+                document.getElementById('login-error').style.display = 'block';
+            }
+        });
+
+        window.logout = function() {
+            document.getElementById('dashboard').style.display = 'none';
+            document.getElementById('login-screen').style.display = 'flex';
+            document.getElementById('login-error').style.display = 'none';
+            document.getElementById('login-form').reset();
+        };
+
+        function initRealtimeListeners() {
+            document.getElementById('att-date').valueAsDate = new Date();
+
+            onSnapshot(collection(db, "students"), (snapshot) => {
+                window.studentsList = [];
+                snapshot.forEach(docSnap => {
+                    window.studentsList.push({ firestoreId: docSnap.id, ...docSnap.data() });
+                });
+                window.studentsList.sort((a,b) => (a.studentId || "").localeCompare(b.studentId || ""));
+                renderOverview();
+                renderStudents();
+                loadAttendanceList();
+            });
+
+            onSnapshot(collection(db, "lecturers"), (snapshot) => {
+                window.lecturersList = [];
+                snapshot.forEach(docSnap => {
+                    window.lecturersList.push({ firestoreId: docSnap.id, ...docSnap.data() });
+                });
+                renderLecturers();
+            });
+        }
+
+        // GENERATE SEQUENTIAL STUDENT ID
+        function generateNextStudentId() {
+            let maxNum = 0;
+            window.studentsList.forEach(s => {
+                if (s.studentId && s.studentId.startsWith("Dev2026")) {
+                    const numStr = s.studentId.replace("Dev2026", "");
+                    const num = parseInt(numStr, 10);
+                    if (!isNaN(num) && num > maxNum) maxNum = num;
+                }
+            });
+            return "Dev2026" + String(maxNum + 1).padStart(3, '0');
+        }
+
+        // STUDENT FORM CONFIRMATION & WELCOME MESSAGE
+        document.getElementById('public-reg-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const studentId = generateNextStudentId();
+            const name = document.getElementById('pub-name').value.trim();
+            const pkg = document.getElementById('pub-package').value;
+
+            const newStudent = {
+                studentId: studentId,
+                name: name,
+                email: document.getElementById('pub-email').value.trim(),
+                phone: document.getElementById('pub-phone').value.trim(),
+                gender: document.getElementById('pub-gender').value,
+                address: document.getElementById('pub-address').value.trim(),
+                package: pkg,
+                createdAt: new Date().toISOString()
+            };
+
+            try {
+                await addDoc(collection(db, "students"), newStudent);
+                
+                // Show Welcome Modal Overlay
+                document.getElementById('modal-student-id').innerText = studentId;
+                document.getElementById('modal-student-name').innerText = name;
+                document.getElementById('modal-student-pkg').innerText = pkg;
+                document.getElementById('welcome-modal').style.display = 'flex';
+
+                this.reset();
+            } catch (err) {
+                alert("Error submitting registration: " + err.message);
+            }
+        });
+
+        window.closeModal = function() {
+            document.getElementById('welcome-modal').style.display = 'none';
+        };
+
+        // ADD LECTURER
+        document.getElementById('add-lecturer-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            await addDoc(collection(db, "lecturers"), {
+                name: document.getElementById('lec-name').value.trim(),
+                email: document.getElementById('lec-email').value.trim(),
+                package: document.getElementById('lec-package').value
+            });
+            this.reset();
+        });
+
+        window.removeLecturer = async function(docId) {
+            if(confirm("Remove lecturer?")) await deleteDoc(doc(db, "lecturers", docId));
+        };
+
+        window.removeStudent = async function(docId) {
+            if(confirm("Remove student?")) await deleteDoc(doc(db, "students", docId));
+        };
+
+        // UI RENDERING
+        function renderOverview() {
+            document.getElementById('cnt-aplus').innerText = `${window.studentsList.filter(s => s.package === "A+ Certification & Networking").length} Student(s)`;
+            document.getElementById('cnt-web').innerText = `${window.studentsList.filter(s => s.package === "Web Design").length} Student(s)`;
+            document.getElementById('cnt-ms').innerText = `${window.studentsList.filter(s => s.package === "Microsoft Packages").length} Student(s)`;
+
+            const tbody = document.getElementById('overview-table-body');
+            tbody.innerHTML = '';
+            window.studentsList.slice(-5).reverse().forEach(s => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td><span class="id-badge">${s.studentId || 'N/A'}</span></td>
+                        <td><strong>${s.name}</strong></td>
+                        <td>${s.email}</td>
+                        <td>${s.phone}</td>
+                        <td><span class="tag">${s.package}</span></td>
+                    </tr>
+                `;
+            });
+        }
+
+        window.renderStudents = function() {
+            const filter = document.getElementById('filter-course').value;
+            const tbody = document.getElementById('student-list');
+            tbody.innerHTML = '';
+
+            const filtered = filter === 'All' ? window.studentsList : window.studentsList.filter(s => s.package === filter);
+            filtered.forEach(s => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td><span class="id-badge">${s.studentId || 'N/A'}</span></td>
+                        <td><strong>${s.name}</strong></td>
+                        <td>${s.gender || 'N/A'}</td>
+                        <td>${s.phone || 'N/A'}</td>
+                        <td>${s.address || 'N/A'}</td>
+                        <td><span class="tag">${s.package}</span></td>
+                        <td><button class="btn-action btn-danger" onclick="removeStudent('${s.firestoreId}')">Remove</button></td>
+                    </tr>
+                `;
+            });
+        };
+
+        function renderLecturers() {
+            const tbody = document.getElementById('lecturer-list');
+            tbody.innerHTML = '';
+            window.lecturersList.forEach(l => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td><strong>${l.name}</strong></td>
+                        <td>${l.email}</td>
+                        <td><span class="tag">${l.package}</span></td>
+                        <td><button class="btn-action btn-danger" onclick="removeLecturer('${l.firestoreId}')">Remove</button></td>
+                    </tr>
+                `;
+            });
+        }
+
+        window.loadAttendanceList = function() {
+            const pkg = document.getElementById('att-package').value;
+            const tbody = document.getElementById('attendance-list');
+            tbody.innerHTML = '';
+
+            const classStudents = window.studentsList.filter(s => s.package === pkg);
+            if (classStudents.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;">No enrolled students in this package yet.</td></tr>`;
+                return;
+            }
+
+            classStudents.forEach(s => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td><span class="id-badge">${s.studentId || 'N/A'}</span></td>
+                        <td><strong>${s.name}</strong></td>
+                        <td>${s.package}</td>
+                        <td><input type="checkbox" checked> Present</td>
+                    </tr>
+                `;
+            });
+        };
+
+        window.switchTab = function(tabId, element) {
+            document.querySelectorAll('.section-panel').forEach(panel => panel.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
+
+            document.getElementById(tabId).classList.add('active');
+            element.classList.add('active');
+
+            const titleMap = {
+                'overview-tab': 'Dashboard Overview',
+                'lecturers-tab': 'Manage Lecturers',
+                'students-tab': 'Student Course Rosters',
+                'attendance-tab': 'Class Attendance Register',
+                'email-form-tab': 'Send Registration Form'
+            };
+            document.getElementById('page-title').innerText = titleMap[tabId];
+            if(tabId === 'attendance-tab') window.loadAttendanceList();
+        };
+    </script>
+</body>
+</html>
